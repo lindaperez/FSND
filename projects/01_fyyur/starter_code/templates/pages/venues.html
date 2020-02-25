@@ -1,19 +1,43 @@
 {% extends 'layouts/main.html' %}
 {% block title %}Fyyur | Venues{% endblock %}
 {% block content %}
+
 {% for area in areas %}
 <h3>{{ area.city }}, {{ area.state }}</h3>
 	<ul class="items">
 		{% for venue in area.venues %}
-		<li>
-			<a href="/venues/{{ venue.id }}">
-				<i class="fas fa-music"></i>
-				<div class="item">
-					<h5>{{ venue.name }}</h5>
-				</div>
+
+            <table>
+                <td width="700">
+                    <i class="fas fa-music"></i><a href="/venues/{{ venue.id }}">
+
+                    <div class="item">
+
+                        <h5>{{ venue.name }}</h5>
+                    </div>
 			</a>
-		</li>
+                </td>
+
+                <td width="50">
+
+			<button id="delete" onClick="deleteVenue('{{venue.id}}');"
+						data-id='{{ venue.id }}'>&cross;</button>
+				<script type="text/javascript">
+					function deleteVenue(venueId) {
+						if (confirm('Are you Sure to Delete? '+venueId)) {
+							fetch('/venues/' + venueId, {method: 'DELETE'})
+
+						}
+					}
+
+				</script>
+    </td>
+</table>
+
+
+
 		{% endfor %}
 	</ul>
 {% endfor %}
 {% endblock %}
+
