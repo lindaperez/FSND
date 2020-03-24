@@ -1,0 +1,10 @@
+    #sub_category = db.session.query(Category.id.label('catid'),Category.type.label('cattype')).subquery()
+
+    #all_questions = db.session.query(Question.id,Question.answer,Question.category,
+
+     #               Question.difficulty,Question.question).outerjoin(sub_category,
+     #               sub_category.c.catid==Question.category).all()
+    #questionList = []
+    #for elem in all_questions:
+     #   questionList.append({'id': elem.id, 'question': elem.question, 'answer': elem.answer,
+      #                         'category': elem.category,'difficulty': elem.difficulty})
