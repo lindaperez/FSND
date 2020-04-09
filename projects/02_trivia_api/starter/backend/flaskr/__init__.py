@@ -1,10 +1,11 @@
 import os
+
 from flask import Flask, request, abort, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS, cross_origin
-from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import exc
 import random
+from flask import abort
 
 from models import setup_db, Question, Category, db
 
@@ -41,9 +42,14 @@ def create_app(test_config=None):
     @app.route('/categories')
     @cross_origin()
     def get_categories():
-
+        data = request.get_json()
+        if data:
+            abort(400,'Bad Request')
+        formatted_categories = {}
         all_categories = Category.query.all()
-        formatted_categories = ['{}{}'.format(category.type, category.id) for category in all_categories]
+        for c in all_categories:
+            if c.id not in formatted_categories.keys():
+                formatted_categories[c.id] = c.type
         return jsonify({
             'categories': formatted_categories
         })
@@ -75,17 +81,19 @@ def create_app(test_config=None):
     @app.route('/questions', methods=['GET'])
     @cross_origin()
     def get_questions():
-
+        data = request.get_json()
+        if data:
+            abort(400,'Bad request')
         all_questions = Question.query.all()
         questions = paginate_questions(request, all_questions)
         all_categories = Category.query.all()
         formatted_categories = ['{}'.format(category.type) for category in all_categories]
 
         return jsonify({
-            'success': True,
             'total_questions': len(all_questions),
             'questions': questions,
             'categories': formatted_categories,
+            'current_category': '',
 
         })
 
@@ -102,7 +110,9 @@ def create_app(test_config=None):
     def delete_question(id):
         success = False
         try:
-            question = Question.query.get(id)
+            question = Question.query.filter(Question.id == id).one_or_none()
+            if not question:
+                abort(422,'Id doesnt exist, Unprocessable Id')
             db.session.delete(question)
             db.session.commit()
 
@@ -128,13 +138,20 @@ def create_app(test_config=None):
     @app.route('/questions/add', methods=['POST'])
     @cross_origin()
     def summit_question():
-
         formq = request.get_json()
+        if not formq:
+            abort(400,'Bad Request')
+
+        for elem in formq.keys():
+            if elem not in {'question','answer','category','difficulty'}:
+                abort(422, 'Bad Request')
+
         question = formq['question']
         answer = formq['answer']
-        error = False
-        difficulty = formq['difficulty']
         category = formq['category']
+        difficulty = formq['difficulty']
+        if question=='' or answer=='':
+            abort(400,'Bad Request')
         q_obj = Question(question=question, answer=answer,
                          difficulty=difficulty, category=category)
         try:
@@ -150,8 +167,8 @@ def create_app(test_config=None):
                         'question': question,
                         'answer': answer,
                         'category': category,
-                        'difficulty': difficulty,
-                        'error': error})
+                        'difficulty': difficulty
+                        })
 
     '''
   @TODO: 
@@ -169,11 +186,11 @@ def create_app(test_config=None):
     def summit_search():
         success = True
         d = request.get_json()
-        if 'searchTerm' in d:
+        if d and 'searchTerm' in d:
             search = '%{}%'.format(d['searchTerm'])
+            all_questions = Question.query.filter(Question.question.ilike(search)).all()
         else:
-            search = ''
-        all_questions = Question.query.filter(Question.question.ilike(search)).all()
+            all_questions = Question.query.all()
 
         questions = paginate_questions(request, all_questions)
 
@@ -197,7 +214,12 @@ def create_app(test_config=None):
     def get_by_category(id):
         try:
             success = True
+            params = request.get_json()
+            if params:
+                abort(422, 'Unprocessable request')
             cat = Category.query.get(id)
+            if not cat:
+                abort(422, 'Category doesnt exist')
             all_questions = Question.query.filter(Question.category == id).all()
             questions = paginate_questions(request, all_questions)
             all_categories = Category.query.all()
@@ -232,7 +254,7 @@ def create_app(test_config=None):
 
         if params['previous_questions']:
             previous_questions = params['previous_questions']
-            q=Question.query.get(previous_questions[0])
+            q = Question.query.get(previous_questions[0])
             categ = Category.query.get(q.category)
             quiz_category = dict(type=categ.type, id=categ.id)
 

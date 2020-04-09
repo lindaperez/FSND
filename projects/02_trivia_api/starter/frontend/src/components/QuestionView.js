@@ -125,12 +125,13 @@ class QuestionView extends Component {
         <div className="categories-list">
           <h2 onClick={() => {this.getQuestions()}}>Categories</h2>
           <ul>
-            {Object.keys(this.state.categories).map((id, ) => (
-              <li key={id} onClick={() => {this.getByCategory(id)}}>
-                {this.state.categories[id]}
-                <img className="category" src={`${this.state.categories[id]}.svg`}/>
-              </li>
-            ))}
+            {Object.keys(this.state.categories).map(id => {
+              return (
+                  <li key={id}   onClick={() => {this.getByCategory(parseInt(id)+1)}}>
+                  {this.state.categories[id]}
+                  <img className="category" src={`${this.state.categories[id]}.svg`}/>
+                  </li>
+            )})}
           </ul>
           <Search submitSearch={this.submitSearch}/>
         </div>
@@ -141,7 +142,7 @@ class QuestionView extends Component {
               key={q.id}
               question={q.question}
               answer={q.answer}
-              category={this.state.categories[q.category]}
+              category={this.state.categories[q.category-1]}
               difficulty={q.difficulty}
               questionAction={this.questionAction(q.id)}
             />

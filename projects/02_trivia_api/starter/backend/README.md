@@ -74,7 +74,8 @@ if provided, and that is not one of the previous questions.
 
 REVIEW_COMMENT
 ```
-This README is missing documentation of your endpoints. Below is an example for your endpoint to get all categories. Please use it as a reference for creating your documentation and resubmit your code. 
+This README is missing documentation of your endpoints. Below is an example for your endpoint to get all categories. 
+Please use it as a reference for creating your documentation and resubmit your code. 
 
 Endpoints
 GET '/categories'
@@ -88,7 +89,7 @@ GET '/categories'
 - Returns: An object with a single key, categories, that contains a object of id: category_string key:value pairs. 
 {'1' : "Science",
 '2' : "Art",
-'3' : "Geography",
+'3' : "Geograp
 '4' : "History",
 '5' : "Entertainment",
 '6' : "Sports"}
