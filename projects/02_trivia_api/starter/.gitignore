@@ -11,3 +11,7 @@ venv
 .Trashes
 ehthumbs.db
 Thumbs.db
+frontend/node_modules
+backend/pip
+backend/trivia.psql
+frontend/public
