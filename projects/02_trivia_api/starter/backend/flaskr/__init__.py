@@ -5,7 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS, cross_origin
 from sqlalchemy import exc
 import random
-from flask import abort
+
 
 from models import setup_db, Question, Category, db
 
@@ -44,7 +44,7 @@ def create_app(test_config=None):
     def get_categories():
         data = request.get_json()
         if data:
-            abort(400,'Bad Request')
+            raise InvalidUsage('Extra arguments doesnt needed.',status_code=400)
         formatted_categories = {}
         all_categories = Category.query.all()
         for c in all_categories:
@@ -83,7 +83,8 @@ def create_app(test_config=None):
     def get_questions():
         data = request.get_json()
         if data:
-            abort(400,'Bad request')
+            raise InvalidUsage('Extra arguments doesnt needed.', status_code=400)
+
         all_questions = Question.query.all()
         questions = paginate_questions(request, all_questions)
         all_categories = Category.query.all()
@@ -112,7 +113,7 @@ def create_app(test_config=None):
         try:
             question = Question.query.filter(Question.id == id).one_or_none()
             if not question:
-                abort(422,'Id doesnt exist, Unprocessable Id')
+                raise InvalidUsage('Id doesnt exist', status_code=422)
             db.session.delete(question)
             db.session.commit()
 
@@ -140,18 +141,18 @@ def create_app(test_config=None):
     def summit_question():
         formq = request.get_json()
         if not formq:
-            abort(400,'Bad Request')
+            raise InvalidUsage('Args needed.',status_code=400)
 
         for elem in formq.keys():
             if elem not in {'question','answer','category','difficulty'}:
-                abort(422, 'Bad Request')
+                raise InvalidUsage('Extra args doesnt needed.',status_code=422)
 
         question = formq['question']
         answer = formq['answer']
         category = formq['category']
         difficulty = formq['difficulty']
         if question=='' or answer=='':
-            abort(400,'Bad Request')
+            raise InvalidUsage('Args should be empty.',status_code=422)
         q_obj = Question(question=question, answer=answer,
                          difficulty=difficulty, category=category)
         try:
@@ -216,10 +217,10 @@ def create_app(test_config=None):
             success = True
             params = request.get_json()
             if params:
-                abort(422, 'Unprocessable request')
+                raise InvalidUsage('Extra attributes not required.',status_code=422)
             cat = Category.query.get(id)
             if not cat:
-                abort(422, 'Category doesnt exist')
+                raise InvalidUsage('Category Doesnt Exist',status_code=422)
             all_questions = Question.query.filter(Question.category == id).all()
             questions = paginate_questions(request, all_questions)
             all_categories = Category.query.all()
@@ -251,22 +252,14 @@ def create_app(test_config=None):
 
         params = request.get_json()
         quiz_category = params['quiz_category']
+        previous_questions = params['previous_questions']
 
-        if params['previous_questions']:
-            previous_questions = params['previous_questions']
-            q = Question.query.get(previous_questions[0])
-            categ = Category.query.get(q.category)
-            quiz_category = dict(type=categ.type, id=categ.id)
-
+        if quiz_category['type'] == 'click':
+            question = Question.query.filter(~Question.id.in_(previous_questions)).first()
+        else:
             cat = Category.query.filter(Category.id == quiz_category['id']).subquery()
             question = Question.query.join(cat, cat.c.id == Question.category). \
                 filter(~Question.id.in_(previous_questions)).first()
-        else:
-            if quiz_category['id'] == 0:
-                question = Question.query.first()
-            else:
-                cat = Category.query.filter(Category.id == quiz_category['id']).subquery()
-                question = Question.query.join(cat, cat.c.id == Question.category).first()
 
         return jsonify({'success': success,
                         'question': {'id': question.id, 'answer': question.answer,
@@ -275,10 +268,34 @@ def create_app(test_config=None):
                                      'category': question.category}}
                        )
 
+
+
     '''
   @TODO: 
   Create error handlers for all expected errors 
   including 404 and 422. 
   '''
+
+    class InvalidUsage(Exception):
+        status_code = 0
+
+        def __init__(self, message, status_code=None, payload=None):
+            Exception.__init__(self)
+            self.message = message
+            if status_code is not None:
+                self.status_code = status_code
+            self.payload = payload
+
+        def to_dict(self):
+            rv = dict(self.payload or ())
+            rv['message'] = self.message
+            rv['status_code'] = self.status_code
+            return rv
+
+    @app.errorhandler(InvalidUsage)
+    def handle_invalid_usage(error):
+        response = jsonify(error.to_dict())
+        response.status_code = error.status_code
+        return response
 
     return app

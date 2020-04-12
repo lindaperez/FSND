@@ -35,12 +35,16 @@ class TriviaTestCase(unittest.TestCase):
     # due to semantic errors it is unable to be processed.
     # 500 Internal Server Error
 
+    # Test Functionality
+
+    # Test List of Categories
     def test_get_categories(self):
         res = self.client().get('/categories')
         data = json.loads(res.data)
         self.assertEqual(res.status_code, 200)
         self.assertTrue(data['categories'])
 
+    # Test List of Questions
     def test_get_questions(self):
         res = self.client().get('/questions')
         data = json.loads(res.data)
@@ -50,16 +54,43 @@ class TriviaTestCase(unittest.TestCase):
         self.assertTrue(data['questions'])
         self.assertTrue(data['categories'])
 
+    # Test Pagination
     def test_verify_pagination(self):
         res = self.client().get('/questions?page=1')
-        data = json.loads(res.data)
         self.assertEqual(res.status_code, 200)
+        data = json.loads(res.data)
         self.assertTrue(data['total_questions'])
         self.assertEqual(data['current_category'], '')
         self.assertTrue(data['questions'])
         self.assertTrue(data['categories'])
         if data['total_questions'] > 10:
             self.assertEqual(len(data['questions']), 10)
+
+    # Test add question
+    def test_add_question(self):
+        res = self.client().post('/questions/add',
+                                 json={'question': 'Men who put first foot at the moon',
+                                       'answer': 'Neil Amstrong', 'category': 4, 'difficulty': 4})
+
+        self.assertEqual(res.status_code, 200)
+        data = json.loads(res.data)
+        self.assertEqual(data['question'],'Men who put first foot at the moon')
+        self.assertEqual(data['answer'],'Neil Amstrong')
+        self.assertEqual(data['category'],4)
+        self.assertEqual(data['difficulty'],4)
+
+
+    # Test play trivia
+    def test_play_game(self):
+        res = self.client().post('/play',
+                                 json={'quiz_category': {'id': '1', 'type': 'Science'}, 'previous_questions': []})
+        self.assertEqual(res.status_code, 200)
+        data = json.loads(res.data)
+        self.assertEqual(data['success'], True)
+        self.assertTrue(data['question'])
+        self.assertTrue(data['question']['category'],1)
+
+    # Test delete element by id
     """
     def test_delete_question_by_id(self):
         res = self.client().delete('/questions/2')
@@ -70,70 +101,90 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(question, None)    
         
     """
-    def test_add_question(self):
-        res = self.client().post('/questions/add',
-                                 json={'question': 'Men who put first foot at the moon',
-                                       'answer': 'Neil Amstrong', 'category': 4, 'difficulty': 4})
 
+    def test_search_by_term(self):
+        res = self.client().post('/questions',
+                                 json={'searchTerm': 'What'})
         self.assertEqual(res.status_code, 200)
+        data = json.loads(res.data)
+        self.assertEqual(data['success'], True)
 
-    # HTTP REQUEST ERRORS
+
+    # 404 NOT FOUND: URL wrote incorrectly.
+
     def test_verify_404_categories(self):
         res = self.client().get('/categori')
+        print(res)
         self.assertEqual(res.status_code, 404)
-
-    def test_verify_400_categories(self):
-        res = self.client().get('/categories', json={'cat': 1})
-        self.assertEqual(res.status_code, 400)
 
     def test_verify_404_questions(self):
         res = self.client().get('/questio')
         self.assertEqual(res.status_code, 404)
 
-    def test_verify_400_questions(self):
-        res = self.client().get('/questions', json={'quest': 1})
-        self.assertEqual(res.status_code, 400)
-
     def test_verify_404_delete_question_by_id(self):
         res = self.client().delete('/questio/1')
         self.assertEqual(res.status_code, 404)
-
-    def test_verify_422_delete_question_by_id(self):
-        res = self.client().delete('/questions/1')
-        self.assertEqual(res.status_code, 422)
-
-    """
-    def test_verify_422_delete_question_by_id(self):
-        #
-        res = self.client().get('/questions/1', json={'method': 'DELETE'})
-        self.assertEqual(res.status_code, 422)
-    """
 
     def test_verify_404_question_by_category(self):
         res = self.client().get('/categories/1/quesons')
         self.assertEqual(res.status_code, 404)
 
-    def test_verify_422_question_by_category(self):
-        res = self.client().get('/categories/10/questions', json={'cat': 1})
-        self.assertEqual(res.status_code, 422)
-
     def test_verify_404_add_question(self):
         res = self.client().post('/add')
         self.assertEqual(res.status_code, 404)
 
-    def test_verify_422_add_question(self):
-        res = self.client().post('/questions/add',
-                                 json={'question': 'Men who put first foot at the moon',
-                                       'answer': 'Neil Amstrong', 'category': 4, 'difficulty': 4, 'cat': 5})
-        self.assertEqual(res.status_code, 422)
+    def test_404_play_game(self):
+        res = self.client().post('/play/', json={'quiz_category': 1, 'previous_questions': []})
+        self.assertEqual(res.status_code, 404)
 
-    def test_verify_400_add_question(self):
+    def test_404_search_by_term(self):
+        res = self.client().post('/question',
+                                 json={'searchTerm': 'What'})
+        self.assertEqual(res.status_code, 404)
+        data = json.loads(res.data)
+        self.assertEqual(data['success'], True)
+
+    # 400 Bad Request: The browser (or proxy) sent a request that this server could not understand.
+
+    # Arg quest incorrect
+    def test_verify_400_questions(self):
+        res = self.client().get('/questions', json={'question': 'question??'})
+        self.assertEqual(res.status_code, 400)
+
+    # Arg cat incorrect
+    def test_verify_categories(self):
+        res = self.client().get('/categories', json={'cat': 1})
+        self.assertEqual(res.status_code, 400)
+ 
+
+    # Args required, incorrect
+    def test_verify_add_question(self):
         res = self.client().post('/questions/add')
         self.assertEqual(res.status_code, 400)
 
+    # 422 Semantic Incorrect
 
-"""
-"""
+    # Test Delete, Id doesnt exist
+    def test_verify_422_delete_question_by_id(self):
+        res = self.client().delete('/questions/1')
+        self.assertEqual(res.status_code, 422)
+
+    # Test Empty answer
+    def test_verify_422_add_question(self):
+        res = self.client().post('/questions/add',
+                                 json={'question': 'Men who put first foot at the moon',
+                                       'answer': '', 'category': 4, 'difficulty': 4})
+        self.assertEqual(res.status_code, 422)
+
+    # 500
+
+    # Bad args type (quiz_category) should be a dict
+    def test_error_500_play_game(self):
+        res = self.client().post('/play',
+                                 json={'quiz_category': 1,
+                                       'previous_questions': None})
+        self.assertEqual(res.status_code, 500)
+
 
 """
     TODO
