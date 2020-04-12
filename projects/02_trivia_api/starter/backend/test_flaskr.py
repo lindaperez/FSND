@@ -91,16 +91,16 @@ class TriviaTestCase(unittest.TestCase):
         self.assertTrue(data['question']['category'],1)
 
     # Test delete element by id
-    """
+
     def test_delete_question_by_id(self):
         res = self.client().delete('/questions/2')
         data = json.loads(res.data)
         question = Question.query.filter(Question.id == 2).one_or_none()
         self.assertEqual(res.status_code, 200)
         self.assertEqual(data['success'], True)
-        self.assertEqual(question, None)    
-        
-    """
+        self.assertEqual(question, None)
+        self.assertEqual(data['id'], 2)
+
 
     def test_search_by_term(self):
         res = self.client().post('/questions',
@@ -137,12 +137,6 @@ class TriviaTestCase(unittest.TestCase):
         res = self.client().post('/play/', json={'quiz_category': 1, 'previous_questions': []})
         self.assertEqual(res.status_code, 404)
 
-    def test_404_search_by_term(self):
-        res = self.client().post('/question',
-                                 json={'searchTerm': 'What'})
-        self.assertEqual(res.status_code, 404)
-        data = json.loads(res.data)
-        self.assertEqual(data['success'], True)
 
     # 400 Bad Request: The browser (or proxy) sent a request that this server could not understand.
 
@@ -152,15 +146,16 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(res.status_code, 400)
 
     # Arg cat incorrect
-    def test_verify_categories(self):
+    def test_verify_400_categories(self):
         res = self.client().get('/categories', json={'cat': 1})
         self.assertEqual(res.status_code, 400)
  
 
     # Args required, incorrect
-    def test_verify_add_question(self):
+    def test_verify_400_add_question(self):
         res = self.client().post('/questions/add')
         self.assertEqual(res.status_code, 400)
+
 
     # 422 Semantic Incorrect
 

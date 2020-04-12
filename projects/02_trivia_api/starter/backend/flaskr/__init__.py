@@ -122,7 +122,8 @@ def create_app(test_config=None):
         else:
             success = True
         return jsonify(
-            {'success': success}
+            {'success': success,
+             'id':id}
         )
 
     '''
@@ -267,9 +268,6 @@ def create_app(test_config=None):
                                      'question': question.question,
                                      'category': question.category}}
                        )
-
-
-
     '''
   @TODO: 
   Create error handlers for all expected errors 
