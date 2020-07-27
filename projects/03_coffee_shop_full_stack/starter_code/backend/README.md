@@ -37,13 +37,13 @@ From within the `./src` directory first ensure you are working using your create
 Each time you open a new terminal session, run:
 
 ```bash
-export FLASK_APP=api.py;
+    export FLASK_APP=api.py;
 ```
 
 To run the server, execute:
 
 ```bash
-flask run --reload
+    flask run --reload
 ```
 
 The `--reload` flag will detect file changes and restart the server automatically.
@@ -54,7 +54,7 @@ The `--reload` flag will detect file changes and restart the server automaticall
 
 1. Create a new Auth0 Account
 2. Select a unique tenant domain
-3. Create a new, single page web application
+3. Create a new, single page web application    
 4. Create a new API
     - in API Settings:
         - Enable RBAC

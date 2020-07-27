@@ -130,7 +130,9 @@ export class DrinksService {
     delete this.items[drink.id];
     this.http.delete(this.url + '/drinks/' + drink.id, this.getHeaders())
     .subscribe( (res: any) => {
-
+      if (res.success) {
+        this.drinksToItems(res.drinks);
+      }
     });
   }
 
